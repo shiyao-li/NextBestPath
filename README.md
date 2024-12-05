@@ -10,7 +10,7 @@ conda activate macarons
 ```
 
 3. Download the dataset from the below link:
-[AiMDoom]([https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html](https://drive.google.com/drive/folders/14IyZZw-HyXhWWfmcC_3xdhBS0lSHJ1jo?usp=sharing))）
+[AiMDoom](https://drive.google.com/drive/folders/14IyZZw-HyXhWWfmcC_3xdhBS0lSHJ1jo?usp=sharing)
 
 4. Download the NBP model weights from the same link.
 
