@@ -1,0 +1,17 @@
+{
+    "numGPU": 0,
+    "dataset_path": "./data/doom_simple",
+    "test_scenes": [
+      "return_of_the_afflicted_17"
+      ],
+    "params_name": "macarons_default_training_config.json",
+    "model_name": "trained_macarons.pth",
+    "results_json_name": "doom1_training.json",
+    "test_resolution": 0.05,
+    "use_perfect_depth_map": true,
+    "compute_collision": false,
+    "load_json": false,
+    "random_seed": 8,
+    "torch_seed": 9,
+    "navi_weights": "../../weights/navi/doom1_best_validation_loss.pth"
+  }

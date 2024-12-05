@@ -1,0 +1,16 @@
+{
+  "numGPU": 0,
+  "dataset_path": "/home/sli/MACARONS-main/data/doom_2/training_dataset",
+  "test_scenes": [
+    "abuse_at_the_mortuary_9"
+    ],
+  "params_name": "macarons_default_training_config.json",
+  "model_name": "trained_macarons.pth",
+  "results_json_name": "ash_rl.json",
+  "test_resolution": 0.05,
+  "use_perfect_depth_map": true,
+  "compute_collision": false,
+  "load_json": false,
+  "random_seed": 8,
+  "torch_seed": 9
+}

@@ -1,0 +1,27 @@
+{
+  "numGPU": 0,
+  "dataset_path": "./data/scenes",
+  "test_scenes": [
+    "neuschwanstein",
+    "bridge",
+    "eiffel",
+    "alhambra",
+    "dunnottar",
+    "pisa",
+    "bannerman",
+    "redeemer",
+    "pantheon",
+    "fushimi",
+    "liberty",
+    "colosseum"
+  ],
+  "params_name": "macarons_default_training_config.json",
+  "model_name": "trained_macarons.pth",
+  "results_json_name": "test_results_in_default_scenes.json",
+  "test_resolution": 0.05,
+  "use_perfect_depth_map": false,
+  "compute_collision": false,
+  "load_json": false,
+  "random_seed": 8,
+  "torch_seed": 9
+}
