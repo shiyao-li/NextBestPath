@@ -1,2 +1,8 @@
 # NextBestPath
-(ICLR 2025) NextBestPath for active mapping
+
+This repository contains the code for:
+
+NextBestPath: Efficient 3D Mapping of Unseen Environments (ICLR 2025)
+
+## Coming soon!
+
