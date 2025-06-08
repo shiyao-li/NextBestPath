@@ -70,7 +70,7 @@ All config files are under the `./configs/` folder.
 ```
 python test_nbp_planning.py
 ```
-3.. **Train NBP models**
+3. **Train NBP models**
 ```
 python train_nbp.py
 ```
