@@ -2581,35 +2581,8 @@ class Camera:
 
         valid_pose_idx = self.get_idx_from_key(random_pose_key)
         return valid_pose_idx
-
-    def get_neighboring_poses(self, pose_idx=None):
-        # todo: Use torch.clamp rather than inequalities
-        """
-        Return neighboring poses' indices of provided camera pose index.
-        if pose_idx is None, return neighbors of current camera pose.
-
-        :param pose_idx: (List, Array or Tensor)
-        :return: (Tensor)
-        """
-        # TO CHANGE! Remove the poses where the camera makes no translation move.
-        if pose_idx is None:
-            pose_idx = self.cam_idx
-
-        res = pose_idx + self.pose_shift
-        res[..., :4][res[..., :4] < 0] = 0
-        res[..., 0][res[..., 0] >= self.pose_l] = self.pose_l - 1
-        res[..., 1][res[..., 1] >= self.pose_w] = self.pose_w - 1
-        res[..., 2][res[..., 2] >= self.pose_h] = self.pose_h - 1
-        res[..., 3][res[..., 3] >= self.pose_n_elev] = self.pose_n_elev - 1
-
-        res[..., 4] = res[..., 4] % self.pose_n_azim
-
-        # We remove neighbor poses where camera does not translate
-        res = res[(torch.sum(torch.abs((res - pose_idx)[..., :3]), dim=-1) > 0.)]
-
-        return torch.unique(res, dim=0)
     
-    def get_neighboring_poses_2d(self, pose_idx=None):
+    def get_neighboring_poses(self, pose_idx=None):
         """
         Return neighboring poses' indices of provided camera pose index.
         if pose_idx is None, return neighbors of current camera pose.
@@ -2635,23 +2608,6 @@ class Camera:
         res = res[(torch.sum(torch.abs((res - pose_idx)[..., :3]), dim=-1) > 0.)]
 
         return torch.unique(res, dim=0)
-
-        # # Convert res to a list of tuples to check against pose_space keys
-        # res_list = [tuple(item) for item in res.tolist()]
-        
-        # # Format tuples as strings in a format matching keys in pose_space
-        # res_list = [str(list(r)) for r in res_list]
-
-        # # Filter out only those indices that exist in pose_space
-        # filtered_res = [r for r in res_list if r in self.pose_space]
-        
-        # # Convert the list back to tensor if filtered_res is not empty
-        # if filtered_res:
-        #     filtered_res = [eval(r) for r in filtered_res]  # Convert strings back to tuples for tensor conversion
-        #     return torch.tensor(filtered_res, device=pose_idx.device)
-        
-        # else:
-        #     return torch.tensor([], dtype=torch.long, device=pose_idx.device)
         
     
     def get_neighboring_poses_single_location(self, pose_idx=None, next_idx=None):

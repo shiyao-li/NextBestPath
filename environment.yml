@@ -350,4 +350,3 @@ dependencies:
     - websockets==11.0.3
     - werkzeug==3.0.1
     - yarl==1.9.2
-prefix: /home/sli/anaconda3/envs/exploration

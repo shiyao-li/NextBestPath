@@ -12,7 +12,7 @@ from macarons.testers.scene import *
 from macarons.utility.render_utils import plot_point_cloud, plot_graph
 from torch.nn.functional import pairwise_distance
 from macarons.trainers.train_macarons import recompute_mapping
-from macarons.utility.long_term_utils import *
+from next_best_path.utility.long_term_utils import *
 
 
 dir_path = os.path.abspath(os.path.dirname(__file__))
@@ -437,7 +437,7 @@ def test_random_walk_planning(params_file,
     device = setup_device(params, None)
 
     # Setup model and dataloader, only get the test dataset
-    dataloader, macarons, memory = setup_test(params, weights_path, device) 
+    dataloader, macarons, memory = setup_macarons_test(params, weights_path, device) 
 
     # Result json
     if load_json:

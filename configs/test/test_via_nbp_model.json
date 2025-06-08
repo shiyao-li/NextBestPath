@@ -1,0 +1,17 @@
+{
+    "numGPU": 0,
+    "dataset_path": "./data/AiMDoom_simple",
+    "test_scenes": [
+      "night_of_collusion_2"
+      ],
+    "params_name": "macarons_default_training_config.json",
+    "model_name": "trained_macarons.pth",
+    "results_json_name": "night_of_collusion_2.json",
+    "test_resolution": 0.05,
+    "use_perfect_depth_map": true,
+    "compute_collision": false,
+    "load_json": false,
+    "random_seed": 8,
+    "torch_seed": 9,
+    "nbp_weights": "../../weights/nbp/AiMDoom_simple_best_val.pth"
+  }

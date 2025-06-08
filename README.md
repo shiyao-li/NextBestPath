@@ -1,37 +1,118 @@
-# Instructions
+<div align="center">
+<h1>NextBestPath: Efficient 3D Mapping of Unseen Environments
+</h1>
 
-1. Follow the instructions from MACARONS (https://github.com/Anttwo/MACARONS) to add the weights of macarons/depth
-Note: We are using the perfect depth map and not the model from Macarons. However, I don't have enough time to modify my code to remove that part.
-   
-2. Create a conda env:
-```python
+<a href="https://arxiv.org/pdf/2502.05378" style="margin-right: 10px;">
+    <img src="https://img.shields.io/badge/arXiv-Paper-b31b1b?logo=arxiv&logoColor=white" alt="arXiv Paper">
+  </a>
+<a href="https://shiyao-li.github.io/nbp/"><img src="https://img.shields.io/badge/Project_Page-green" alt="Project Page"></a>
+
+
+
+*A method for generating the next-best-path for efficient active mapping, along with a new benchmark tailored for complex indoor environments.*
+
+</div>
+
+```bibtex
+@inproceedings{li2025nextbestpath,
+      title={NextBestPath: Efficient 3D Mapping of Unseen Environments},
+      author={Shiyao Li and Antoine Guedon and Cl{\'e}mentin Boittiaux and Shizhe Chen and Vincent Lepetit},
+      booktitle={The Thirteenth International Conference on Learning Representations},
+      year={2025},
+      url={https://openreview.net/forum?id=7WaRh4gCXp}
+}
+```
+
+## Updates
+- [June, 2025] Release the training and test code
+
+## Quick Start
+
+### Prerequisites
+
+First, ensure you have conda installed, then set up the environment:
+
+```bash
+# Clone this repository
+git clone https://github.com/shiyao-li/NextBestPath.git
+cd NextBestPath
+
+# Create and activate conda environment
 conda env create -f environment.yml
-conda activate macarons
+conda activate exploration
 ```
 
-3. Download the dataset from the below link:
-[AiMDoom](https://drive.google.com/drive/folders/14IyZZw-HyXhWWfmcC_3xdhBS0lSHJ1jo?usp=sharing)
+### Installation
 
-4. Download the NBP model weights from the same link.
+1. **Download the AiMDoom Dataset**
+   
+   Download the complete dataset from [Google Drive](https://drive.google.com/drive/folders/1fwhCrxmrJnpdK-egawoX2OYHUxnxAwr-):
+   - AiMDoom dataset (4 difficulty levels)
+   - Pre-trained NBP model weights
 
-Doom1 equals to Doom_Simple
+2. **Set up model weights**
+   
+   Place the downloaded NBP model weights in the following structure:
+   ```
+   ./weights/nbp/
+   ├── AiMDoom_simple_best_val.pth   
+   ├── AiMDoom_normal_best_val.pth   
+   ├── AiMDoom_hard_best_val.pth   
+   └── AiMDoom_insane_best_val.pth 
+   ```
+<!-- 
+## Usage
 
-Doom2 equals to Doom_Normal
+### Configuration
 
-Doom3 equals to Doom_Hard
+Before running the navigation system, modify the configuration file `test_via_navi_model.json` to match your setup:
 
-Doom4 equals to Doom_Insane
+```json
+{
+  "dataset_path": "/path/to/aimdoom/dataset",
+  "model_weights": "./weights/navi/doom1_weights.pth",
+  "difficulty_level": "simple",
+  "num_camera_poses": 101,
+  "use_perfect_depth": true
+}
+```
 
-Eg. If you are testing on the simple dataset, use the weights of doom1 and set the number of camera poses to 101.
+### Running Navigation Planning
 
-Store these models in:
+Execute the main navigation planning script:
+
+```bash
+python test_navi_planning_2d.py
+```
+
+### Example Usage
+
 ```python
-./weights/navi/
-```
+import torch
+from navigation.navi_planner import NavigationPlanner
+from utils.config_loader import load_config
 
-5. Modify config file: test_via_navi_model.json
+# Load configuration
+config = load_config("test_via_navi_model.json")
 
-6. Run the script:
-```python
-test_navi_planning_2d.py
-```
+# Initialize navigation planner
+planner = NavigationPlanner(config)
+
+# Load model weights (example for simple difficulty)
+planner.load_weights("./weights/navi/doom1_weights.pth")
+
+# Run navigation planning
+results = planner.plan_navigation(
+    scene_data=your_scene_data,
+    num_poses=101
+)
+``` -->
+
+<!-- 
+## Acknowledgments
+
+This work builds upon several excellent projects:
+
+- [MACARONS](https://github.com/Anttwo/MACARONS) - For the foundational depth estimation framework
+- AiMDoom Dataset - For providing comprehensive navigation evaluation scenarios -->
+

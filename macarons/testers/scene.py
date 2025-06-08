@@ -5,8 +5,8 @@ import torch
 import gc
 from ..utility.macarons_utils import *
 from ..utility.utils import count_parameters
-from ..utility.long_term_utils import line_segment_intersects_point_cloud_region, check_camera_in_mesh
-from navi.utility.utils import *
+from next_best_path.utility.long_term_utils import line_segment_intersects_point_cloud_region, check_camera_in_mesh
+from next_best_path.utility.utils import *
 import json
 import time
 import ast
@@ -62,7 +62,7 @@ def create_blender_curves(params, X_cam_history, V_cam_history, cam_size=10, jum
     return camera_X.tolist(), camera_look.tolist()
 
 
-def setup_test(params, model_path, device):
+def setup_macarons_test(params, model_path, device):
     # Create dataloader
     _, _, test_dataloader = get_dataloader(train_scenes=params.train_scenes,
                                            val_scenes=params.val_scenes,
@@ -216,110 +216,6 @@ def setup_test_scene(params,
 
     return gt_scene, covered_scene, surface_scene, proxy_scene
 
-
-def setup_test_camera(params,
-                      mesh, start_cam_idx,
-                      settings,
-                      occupied_pose_data,
-                      gt_scene,
-                      device,
-                      training_frames_path,
-                      mirrored_scene=False,
-                      mirrored_axis=None):
-    """
-    Setup the camera used for prediction.
-
-    :param params:
-    :param mesh:
-    :param start_cam_idx:
-    :param settings:
-    :param occupied_pose_data:
-    :param device:
-    :param training_frames_path:
-    :return:
-    """
-    # Default camera to initialize the renderer
-    n_camera = 1
-    camera_dist = [10 * params.scene_scale_factor] * n_camera  # 10
-    camera_elev = [30] * n_camera
-    camera_azim = [260] * n_camera  # 160
-    R, T = look_at_view_transform(camera_dist, camera_elev, camera_azim)
-    zfar = params.zfar
-    fov_camera = FoVPerspectiveCameras(R=R, T=T, zfar=zfar, device=device)
-
-    renderer = get_rgb_renderer(image_height=params.image_height,
-                                image_width=params.image_width,
-                                ambient_light_intensity=params.ambient_light_intensity,
-                                cameras=fov_camera,
-                                device=device,
-                                max_faces_per_bin=500000
-                                )
-
-    # Initialize camera
-    camera = Camera(x_min=settings.camera.x_min, x_max=settings.camera.x_max,
-                    pose_l=settings.camera.pose_l, pose_w=settings.camera.pose_w, pose_h=settings.camera.pose_h,
-                    pose_n_elev=settings.camera.pose_n_elev, pose_n_azim=settings.camera.pose_n_azim,
-                    n_interpolation_steps=params.n_interpolation_steps, zfar=params.zfar,
-                    renderer=renderer,
-                    device=device,
-                    contrast_factor=settings.camera.contrast_factor,
-                    gathering_factor=params.gathering_factor,
-                    occupied_pose_data=occupied_pose_data,
-                    save_dir_path=training_frames_path,
-                    mirrored_scene=mirrored_scene,
-                    mirrored_axis=mirrored_axis)  # Change or remove this path during inference or test
-
-    # Move to a valid neighbor pose before starting training.
-    # Thus, we will have a few images to start training the depth module
-    
-    # flag_initial = False
-    
-    # while True:
-    #     start_cam_idx = random.choice(list(camera.pose_space.keys()))
-    #     start_cam_idx = torch.tensor(ast.literal_eval(start_cam_idx)).to(device)
-        
-    #     neighbor_indices = camera.get_neighboring_poses(pose_idx=start_cam_idx)
-    #     valid_neighbors = camera.get_valid_neighbors(neighbor_indices=neighbor_indices, mesh=mesh)
-        
-    #     for neigh in valid_neighbors:
-    #         if not line_segment_intersects_point_cloud_region(gt_scene, camera.pose_space[str(neigh.cpu().numpy().tolist())][:3], camera.pose_space[str(start_cam_idx.cpu().numpy().tolist())][:3], device):
-    #             first_cam_idx = neigh
-    #             flag_initial = True
-    #             break
-        
-    #     if flag_initial:
-    #         break
-        
-    neighbor_indices = camera.get_neighboring_poses(pose_idx=start_cam_idx)
-    valid_neighbors = camera.get_valid_neighbors(neighbor_indices=neighbor_indices, mesh=mesh)
-
-    for neigh in valid_neighbors:
-        if not line_segment_intersects_point_cloud_region(gt_scene, camera.pose_space[str(neigh.cpu().numpy().tolist())][:3], camera.pose_space[str(start_cam_idx.cpu().numpy().tolist())][:3], device):
-            first_cam_idx = neigh
-            break
-
-    # first_cam_idx = valid_neighbors[np.random.randint(low=0, high=len(valid_neighbors))]
-    # first_cam_idx = torch.tensor([0, 4, 1, 2, 2], device='cuda:1')
-    # print("debug111", valid_neighbors)
-    # print("debug111", neighbor_indices.size())
-    # print("debug222",first_cam_idx)
-    # Select a random, valid camera pose as starting pose
-    print(first_cam_idx)
-    first_cam_idx[3] = 2
-    camera.initialize_camera(start_cam_idx=first_cam_idx)
-
-    # Capture initial image
-    camera.capture_image(mesh)
-
-    # We capture images along the way
-    interpolation_step = 1
-    for i in range(camera.n_interpolation_steps):
-        camera.update_camera(start_cam_idx, interpolation_step=interpolation_step)
-        camera.capture_image(mesh)
-        interpolation_step += 1
-
-    return camera
-
 def setup_training_2d_camera(params,
                       mesh, start_cam_idx,
                       settings,
@@ -393,12 +289,6 @@ def setup_training_2d_camera(params,
         
         if first_cam_idx is not None:
             break
-
-    # first_cam_idx = valid_neighbors[np.random.randint(low=0, high=len(valid_neighbors))]
-    # first_cam_idx = torch.tensor([0, 4, 1, 2, 2], device='cuda:1')
-    # print("debug111", valid_neighbors)
-    # print("debug111", neighbor_indices.size())
-    # print("debug222",first_cam_idx)
     # Select a random, valid camera pose as starting pose
     camera.initialize_camera(start_cam_idx=first_cam_idx)
 
@@ -415,7 +305,7 @@ def setup_training_2d_camera(params,
     return camera
     
     
-def setup_test_2d_camera(params,
+def setup_training_camera(params,
                       mesh, mesh_for_check, start_cam_idx,
                       settings,
                       occupied_pose_data,
@@ -481,20 +371,12 @@ def setup_test_2d_camera(params,
             random_pose_key = np.random.choice(list(camera.pose_space.keys()))
             random_pose = camera.pose_space[random_pose_key]
 
-            # random_pose_point = np.array([[random_pose[0].cpu().numpy(), random_pose[1].cpu().numpy(), random_pose[2].cpu().numpy()]])
-            # ray_directions = np.array([[0, -1, 0]])
-            # inter_locations, _, _ = mesh_for_check.ray.intersects_location(ray_origins=random_pose_point,
-            #                                                             ray_directions=ray_directions)
-            # if len(inter_locations) % 2 == 1:
-            #     start_cam_idx = camera.get_idx_from_key(random_pose_key)
-            #     pose_outside_mesh = False
             random_pose_position = random_pose[:3]
             if check_camera_in_mesh(mesh_for_check, random_pose_position):
                 start_cam_idx = camera.get_idx_from_key(random_pose_key)
                 pose_outside_mesh = False
 
         # Select a random, valid camera pose as starting pose
-        # start_cam_idx = camera.get_random_valid_pose(mesh=mesh, proxy_scene=proxy_scene)
         camera.cam_idx = start_cam_idx
 
         # Move to a valid neighbor pose before starting training.
@@ -525,7 +407,7 @@ def setup_test_2d_camera(params,
     return camera
 
 
-def setup_test_iclr_camera(params,
+def setup_test_camera(params,
                       mesh, mesh_for_check, start_cam_idx,
                       settings,
                       occupied_pose_data,
@@ -579,13 +461,12 @@ def setup_test_iclr_camera(params,
 
 
     # Fixed the Y axis and fillter the camere pose_space
-        # Fixed the elevation to 2
+    # Fixed the elevation
     fixed_elevation = {key: val for key, val in camera.pose_space.items() if eval(key)[-2] == 2}
     camera.pose_space = fixed_elevation
 
     # Move to a valid neighbor pose before starting training.
-    # Thus, we will have a few images to start training the depth module
-    neighbor_indices = camera.get_neighboring_poses_2d(pose_idx=start_cam_idx)
+    neighbor_indices = camera.get_neighboring_poses(pose_idx=start_cam_idx)
 
     for neigh in neighbor_indices:
         if not line_segment_mesh_intersection(camera.pose_space[str(neigh.cpu().numpy().tolist())][:3], camera.pose_space[str(start_cam_idx.cpu().numpy().tolist())][:3], mesh_for_check):
@@ -983,7 +864,7 @@ def run_test(params_name,
     device = setup_device(params, None)
 
     # Setup model and dataloader
-    dataloader, macarons, memory = setup_test(params, weights_path, device)
+    dataloader, macarons, memory = setup_macarons_test(params, weights_path, device)
 
     # Result json
     if load_json:
