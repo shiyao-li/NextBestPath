@@ -2279,21 +2279,6 @@ class Camera:
         self.min_ndc_y, self.max_ndc_y = self.ndc_y_tab[-1, -1], self.ndc_y_tab[0, 0]
 
         # ----------Trajectory management tools-------------------------------------------------------------------------
-        # self.pose_space = {}
-        # self.pose_history = {}
-        # pose_indices = torch.cartesian_prod(torch.arange(0, pose_l),
-        #                                     torch.arange(0, pose_w),
-        #                                     torch.arange(0, pose_h),
-        #                                     torch.arange(0, pose_n_elev),
-        #                                     torch.arange(0, pose_n_azim))
-
-        # self.l_step = (self.x_max - self.x_min)[0] / self.pose_l
-        # self.w_step = (self.x_max - self.x_min)[1] / self.pose_w
-        # self.h_step = (self.x_max - self.x_min)[2] / self.pose_h
-        
-        # self.l_step = (self.x_max - self.x_min)[0] / (self.pose_l - 1)
-        # self.w_step = (self.x_max - self.x_min)[1] / (self.pose_w)
-        # self.h_step = (self.x_max - self.x_min)[2] / (self.pose_h - 1)
 
         self.pose_shift = torch.cartesian_prod(torch.arange(0, 3),
                                                torch.arange(0, 3),
@@ -2303,27 +2288,10 @@ class Camera:
         # For positions, we want the camera to move by exactly 1 unit
         self.pose_shift = self.pose_shift[
             (torch.sum(torch.abs(self.pose_shift[:, :3]), dim=1) == 1).view(-1, 1).expand(-1, 5)].view(-1, 5)
-        # For rotations, we want the camera to rotate by at most 1 unit
-        # self.pose_shift = self.pose_shift[
-        #     (torch.sum(torch.abs(self.pose_shift[:, 4:]), dim=1) <= 4).view(-1, 1).expand(-1, 5)].view(-1, 5)
-
-        # for pose_idx in pose_indices:
-        #     i_l, i_w, i_h, i_theta, i_azim = pose_idx[0].item(), pose_idx[1].item(), pose_idx[2].item(), \
-        #                                      pose_idx[3].item(), pose_idx[4].item()
-
-        #     pose = torch.Tensor([self.x_min[0] + (1 / 2. + i_l) * self.l_step,
-        #                          self.x_min[1] + (1 / 2. + i_w) * self.w_step,
-        #                          self.x_min[2] + (1 / 2. + i_h) * self.h_step,
-        #                          -90. + 180. * (1 + i_theta) / (self.pose_n_elev + 1),
-        #                          360 * i_azim / self.pose_n_azim
-        #                          ]).to(device)
-        #     self.pose_space[str(pose_idx.numpy().tolist())] = pose
-        #     self.pose_history[str(pose_idx.numpy().tolist())] = False
 
         self.pose_space = {}
         self.pose_history = {}
 
-        # 使用修改后的步长生成pose_indices
         pose_indices = torch.cartesian_prod(torch.arange(0, self.pose_l),
                                             torch.arange(0, self.pose_w),
                                             torch.arange(0, self.pose_h),
@@ -2360,34 +2328,6 @@ class Camera:
 
         # ----------Occupied pose management----------------------------------------------------------------------------
         self.use_occupied_pose = False
-        # if occupied_pose_data is not None:
-        #     self.use_occupied_pose = True
-        #     pose_is_occupied = {}
-        #     for i in range(len(occupied_pose_data['X_idx'])):
-        #         is_occupied = occupied_pose_data['occupied'][i]
-
-        #         X_idx = 0. + occupied_pose_data['X_idx'][i]
-        #         if mirrored_scene:
-        #             if mirrored_axis is None:
-        #                 raise NameError("Please provide the list of mirrored axis.")
-        #             else:
-        #                 for axis in mirrored_axis:
-        #                     if axis == 0:
-        #                         bound = self.pose_l - 1
-        #                     elif axis == 1:
-        #                         bound = self.pose_w - 1
-        #                     elif axis == 2:
-        #                         bound = self.pose_h - 1
-        #                     else:
-        #                         raise NameError("Wrong value for axis to be mirrored. "
-        #                                         "Please choose an integer in [0, 1, 2].")
-        #                     X_idx[..., axis] = bound - X_idx[..., axis]
-
-        #         X_key = str(X_idx.long().cpu().numpy().tolist())
-
-        #         pose_is_occupied[X_key] = is_occupied.item()
-
-        #     self.pose_is_occupied = pose_is_occupied
 
     def initialize_camera(self, start_cam_idx):
         """
@@ -2450,84 +2390,6 @@ class Camera:
         for indices in sample_poses_indices:
             # Check if pose is occupied
             indices = str(indices)
-            pose_is_occupied = self.check_if_pose_is_occupied(indices, input_type='key')
-
-            if not pose_is_occupied:
-                # Check if pose has an empty field of view
-                random_pose = self.pose_space[indices]
-                X_cam, V_cam, fov_camera = self.get_camera_parameters_from_pose(random_pose) # Important
-                empty_fov = self.is_fov_empty(mesh, fov_camera)
-
-                if not empty_fov:
-                # Check if pose is oriented toward bounding box
-                    fov_proxy_points = self.get_points_in_fov(pts=proxy_scene.proxy_points, return_mask=False,
-                                                            fov_camera=fov_camera, fov_range=5 * self.zfar)
-                    no_proxy_in_fov = fov_proxy_points.shape[0] <= 0
-
-                    if not no_proxy_in_fov:
-                        params_list = [random_pose, X_cam, fov_camera, indices]
-                        sampled_poses_params_list.append(params_list)
-
-        return sampled_poses_params_list
-
-    def sample_valid_poses_in_2d_space(self, mesh, proxy_scene, num_samples=200):
-        '''
-        By Shiyao
-        Return a list of valid sampled poses in whole scene. 
-        Every item in the list will be like: [camera_pose, X_cam, fov_camera, idx]
-
-        :param mesh
-        :param proxy_scene
-        '''
-
-        # Sample num_samples random poses
-        sampled_poses_indices = np.random.choice(list(self.pose_space.keys()), num_samples)
-        current_pose = self.cam_idx.tolist()
-        # Used for storing the params of valid sampled poses.
-        sampled_poses_params_list = []
-        stacked_poses_list = []
-        for indices in sampled_poses_indices:
-            # Check if pose is occupied
-            if indices == current_pose:
-                continue
-            pose_is_occupied = self.check_if_pose_is_occupied(indices, input_type='key')
-
-            if not pose_is_occupied:
-                # Check if pose has an empty field of view
-                random_pose = self.pose_space[indices]
-                X_cam, V_cam, fov_camera = self.get_camera_parameters_from_pose(random_pose) # Important
-                empty_fov = self.is_fov_empty(mesh, fov_camera)
-
-                if not empty_fov:
-                # Check if pose is oriented toward bounding box
-                    fov_proxy_points = self.get_points_in_fov(pts=proxy_scene.proxy_points, return_mask=False,
-                                                            fov_camera=fov_camera, fov_range=5 * self.zfar)
-                    no_proxy_in_fov = fov_proxy_points.shape[0] <= 0
-
-                    if not no_proxy_in_fov:
-                        params_list = [random_pose, X_cam, indices]
-                        sampled_poses_params_list.append(params_list)
-                        stacked_poses_list.append(random_pose)
-        stacked_poses = torch.stack(stacked_poses_list)
-
-        return stacked_poses, sampled_poses_params_list
-    
-    def sample_valid_poses_in_space(self, mesh, proxy_scene, num_samples=200):
-        '''
-        By Shiyao
-        Return a list of valid sampled poses in whole scene. 
-        Every item in the list will be like: [camera_pose, X_cam, fov_camera, idx]
-
-        :param mesh
-        :param proxy_scene
-        '''
-
-        # Sample num_samples random poses
-        sampled_poses_indices = np.random.choice(list(self.pose_space.keys()), num_samples)
-        # Used for storing the params of valid sampled poses.
-        sampled_poses_params_list = []
-        for indices in sampled_poses_indices:
-            # Check if pose is occupied
             pose_is_occupied = self.check_if_pose_is_occupied(indices, input_type='key')
 
             if not pose_is_occupied:
@@ -3112,17 +2974,8 @@ class Cell:
     def fill(self, pts, features=None, n_point_min=0):
         mask = torch.max(pts - self.x_max, dim=-1)[0] < 0.
         pts_to_add = pts[mask]
-        # tolerance = self.resolution / 3 # 根据你的具体需求调整此值
-        
-        # # 扩展边界以包含靠近边界的点
-        # expanded_x_min = self.x_min - tolerance
-        # expanded_x_max = self.x_max + tolerance
-        
-        # # 首先，检查哪些点在扩展后的边界内
-        # mask_max = torch.max(pts - expanded_x_max, dim=-1)[0] < 0
-        # mask_min = torch.min(pts - expanded_x_min, dim=-1)[0] > 0
-        # mask = mask_max & mask_min
-        # pts_to_add = pts[mask]
+        # tolerance = self.resolution / 3
+    
         if self.use_feature and features is not None:
             features_to_add = features[mask]
 

@@ -25,6 +25,7 @@
 
 ## Updates
 - [June, 2025] Release the training and test code
+- Todo: Release the models of MACARONS and the corresponding scripts
 
 ## Quick Start
 
@@ -48,10 +49,10 @@ conda activate exploration
    
    Download the complete dataset from [Google Drive](https://drive.google.com/drive/folders/1fwhCrxmrJnpdK-egawoX2OYHUxnxAwr-):
    - AiMDoom dataset (4 difficulty levels)
-   - Pre-trained NBP model weights
+   - The toolkit and code to build AiMDoom dataset: [Github_link](https://github.com/shiyao-li/AiMDoom)
 
-2. **Set up model weights**
-   
+2. **Download and set up model weights**
+   Download NBP models from [Google Drive](https://drive.google.com/drive/folders/1jAEKrznbbZ5bwu39y0ah4pszMlTuVAfH?usp=sharing), and put them under the `./weights/nbp/` folder.
    Place the downloaded NBP model weights in the following structure:
    ```
    ./weights/nbp/
@@ -60,6 +61,19 @@ conda activate exploration
    ├── AiMDoom_hard_best_val.pth   
    └── AiMDoom_insane_best_val.pth 
    ```
+
+### Usage
+
+1. **Configs**
+All config files are under the `./configs/` folder.
+2. **Test NBP method**
+```
+python test_nbp_planning.py
+```
+3.. **Train NBP models**
+```
+python train_nbp.py
+```
 <!-- 
 ## Usage
 

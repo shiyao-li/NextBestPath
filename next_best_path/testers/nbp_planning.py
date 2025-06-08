@@ -501,13 +501,6 @@ def test_nbp_planning(params_file,
                                                                                       use_perfect_depth_map=use_perfect_depth_map,
                                                                                       )
                 
-
-                # plot_scene_and_tragectory_and_constructed_pt(scene_name=scene_name, params=params, gt_scene=gt_scene,
-                #                                             proxy_scene=proxy_scene, macarons=macarons,
-                #                                             surface_scene=surface_scene, camera=camera,
-                #                                             i_th_scene=i_th_scene, memory=memory,
-                #                                             device=device, results_dir=results_dir)
-                
                 
                 results_to_save[scene_name][str(start_cam_idx_i)] = {}
                 results_to_save[scene_name][str(start_cam_idx_i)]["coverage"] = coverage_evolution
