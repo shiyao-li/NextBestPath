@@ -1,6 +1,8 @@
 <div align="center">
 <h1>NextBestPath: Efficient 3D Mapping of Unseen Environments</h1>
 
+[Shiyao Li](https://shiyao-li.github.io/), [Antoine Guédon](https://anttwo.github.io/), [Clémentin Boittiaux](https://clementinboittiaux.github.io/), [Shizhe Chen](https://cshizhe.github.io/), [Vincent Lepetit](https://vincentlepetit.github.io/)
+
 <a href="https://arxiv.org/pdf/2502.05378" style="margin-right: 10px;">
   <img src="https://img.shields.io/badge/arXiv-Paper-b31b1b?logo=arxiv&logoColor=white" alt="arXiv Paper">
 </a>
