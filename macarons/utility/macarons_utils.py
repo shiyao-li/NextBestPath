@@ -2443,6 +2443,32 @@ class Camera:
 
         valid_pose_idx = self.get_idx_from_key(random_pose_key)
         return valid_pose_idx
+
+    def get_neighboring_poses_2d(self, pose_idx=None):
+        """
+        Return neighboring poses' indices of provided camera pose index.
+        if pose_idx is None, return neighbors of current camera pose.
+
+        :param pose_idx: (List, Array or Tensor)
+        :return: (Tensor)
+        """
+        if pose_idx is None:
+            pose_idx = self.cam_idx
+        res = pose_idx + self.pose_shift
+        res[..., :4][res[..., :4] < 0] = 0
+        res[..., 0][res[..., 0] >= self.pose_l] = self.pose_l - 1
+        # Fixing the y axis value by setting it back to the original
+        res[..., 1] = pose_idx[..., 1]
+        res[..., 2][res[..., 2] >= self.pose_h] = self.pose_h - 1
+        res[..., 3] = pose_idx[..., 3]
+
+
+        res[..., 4] = res[..., 4] % self.pose_n_azim
+
+        # We remove neighbor poses where the camera does not translate
+        res = res[(torch.sum(torch.abs((res - pose_idx)[..., :3]), dim=-1) > 0.)]
+
+        return torch.unique(res, dim=0)
     
     def get_neighboring_poses(self, pose_idx=None):
         """
