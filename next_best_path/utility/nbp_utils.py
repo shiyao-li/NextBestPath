@@ -170,11 +170,9 @@ class LogExplorationLoss(nn.Module):
         self.scaling_factor = scaling_factor
 
     def forward(self, pred_gain, actual_gain):
-        # 将增益值缩放
         pred_gain_scaled = self.scaling_factor * pred_gain
         actual_gain_scaled = self.scaling_factor * actual_gain
 
-        # 计算均方误差
         mse = (pred_gain_scaled - actual_gain_scaled) ** 2
 
         return mse.mean()
@@ -677,7 +675,7 @@ def trajectory_collection(params, current_epoch, train_dataloader, db_env, pc2im
                                     stack_gains = torch.tensor(value_list, dtype=torch.float32, device=device)
                                     experience_db = {
                                         'current_model_input': experiences_list[ex][1],
-                                        'current_gt_obs_layout': experiences_list[ex][2],
+                                        'current_gt_2d_layout': experiences_list[ex][2],
                                         'target_value_map_pixel': pixels,
                                         'actual_coverage_gain': stack_gains,
                                         'pose_i' : pose_i
