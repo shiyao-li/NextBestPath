@@ -20,7 +20,7 @@ from next_best_path.utility.nbp_utils import *
 from next_best_path.utility.utils import *
 from macarons.utility.macarons_utils import *
 from macarons.trainers.train_macarons import setup_scene, setup_camera
-from macarons.testers.scene import setup_test_scene
+from macarons.testers.scene import setup_test_scene, setup_training_camera
 from next_best_path.utility.long_term_utils import *
 from torch.optim.lr_scheduler import ReduceLROnPlateau
 from torchvision.transforms import transforms
