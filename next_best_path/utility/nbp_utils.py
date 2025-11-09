@@ -303,8 +303,8 @@ def validation_model(training_set_db, params, nbp, device):
         for data in batch_data:
             current_model_input = torch.from_numpy(np.copy(data['current_model_input'])).to(device)
             current_gt_2d_layout = torch.from_numpy(np.copy(data['current_gt_2d_layout'])).to(device)
-            target_heatmap_pixel = torch.from_numpy(np.copy(data['target_heatmap_pixel'])).to(device)
-            actual_path_gain = torch.from_numpy(np.copy(data['actual_path_gain'])).to(device)
+            target_heatmap_pixel = torch.from_numpy(np.copy(data['target_value_map_pixel'])).to(device)
+            actual_path_gain = torch.from_numpy(np.copy(data['actual_coverage_gain'])).to(device)
             training_exp.append([
                 current_model_input,
                 current_gt_2d_layout,
@@ -351,7 +351,7 @@ def train_experience_data(training_set_db, params, optimizer, nbp, device, curre
         for data in batch_data:
             if (data['pose_i'] > 10 and current_epoch == 1) or current_epoch > 1:  # current_epoch > 1
                 current_model_input = torch.from_numpy(np.copy(data['current_model_input'])).to(device)
-                current_gt_obs_layout = torch.from_numpy(np.copy(data['current_gt_obs_layout'])).to(device)
+                current_gt_obs_layout = torch.from_numpy(np.copy(data['current_gt_2d_layout'])).to(device)
                 target_value_map_pixel = torch.from_numpy(np.copy(data['target_value_map_pixel'])).to(device)
                 actual_coverage_gain = torch.from_numpy(np.copy(data['actual_coverage_gain'])).to(device)
 
