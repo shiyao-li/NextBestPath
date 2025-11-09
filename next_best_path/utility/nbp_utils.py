@@ -35,8 +35,8 @@ def store_experience(env, data):
         packed_data = msgpack.packb({
             'current_model_input': data['current_model_input'].cpu().numpy(),
             'current_gt_2d_layout': data['current_gt_2d_layout'].cpu().numpy(),
-            'target_heatmap_pixel': data['target_heatmap_pixel'].cpu().numpy(),
-            'actual_path_gain': data['actual_path_gain'].cpu().numpy(),
+            'target_value_map_pixel': data['target_value_map_pixel'].cpu().numpy(),
+            'actual_coverage_gain': data['actual_coverage_gain'].cpu().numpy(),
             'pose_i': np.array(data['pose_i'])
         }, use_bin_type=True)
         txn.put(key, packed_data)
