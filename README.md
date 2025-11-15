@@ -24,7 +24,7 @@ NextBestPath (NBP) is a novel method for next-best-path planning in 3D scene exp
 
 This repository contains:
 * A simulator based on PyTorch3D and Trimesh
-* Functions for generating ground truth point clouds from meshes and validating reconstructed point clouds
+* Functions for generating ground truth point clouds from meshes and evaluating reconstructed point clouds
 * Scripts for testing and training NBP models on AiMDoom dataset.
 
 ```bibtex
@@ -108,3 +108,4 @@ If you use this work in your research, please cite:
   url={https://openreview.net/forum?id=7WaRh4gCXp}
 }
 ```
+
