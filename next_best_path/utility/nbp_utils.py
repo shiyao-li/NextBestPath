@@ -448,7 +448,7 @@ def train_nbp(db_env, params, optimizer, nbp, device, folder_img_path, current_e
         for epoch in range(num_epochs):
             nbp.train()
             
-            train_loss = train_experience_data(training_set_db=training_set_db, params=params, optimizer=optimizer, navi=nbp, device=device, current_epoch=current_epoch)
+            train_loss = train_experience_data(training_set_db=training_set_db, params=params, optimizer=optimizer, nbp=nbp, device=device, current_epoch=current_epoch)
             nbp.eval()
             with torch.no_grad():
                 validation_loss = validation_model(validation_data, params, nbp, device)
