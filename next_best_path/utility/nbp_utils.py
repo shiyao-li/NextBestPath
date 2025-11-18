@@ -212,7 +212,7 @@ def init_weights(m):
 
 def initialize_nbp(params, nbp, torch_seed, initialize, 
                      pretrained, ddp_rank):
-    model_name = params.navi_model_name
+    model_name = params.nbp_model_name
     start_epoch = 0
     best_loss = 10000.
     
@@ -345,8 +345,8 @@ def train_experience_data(training_set_db, params, optimizer, nbp, device, curre
     accumulation_steps = 8 # gaile: 8
     update_count = 0
 
-    for i in range(0, len(training_set_db), params.navi_batch_size):
-        batch_data = training_set_db[i:i + params.navi_batch_size]
+    for i in range(0, len(training_set_db), params.nbp_batch_size):
+        batch_data = training_set_db[i:i + params.nbp_batch_size]
         training_exp = []
         for data in batch_data:
             if (data['pose_i'] > 10 and current_epoch == 1) or current_epoch > 1:  # current_epoch > 1
@@ -384,7 +384,7 @@ def train_experience_data(training_set_db, params, optimizer, nbp, device, curre
         accumulated_loss += batch_loss.item()
         update_count += 1
 
-        if update_count % accumulation_steps == 0 or (i + params.navi_batch_size) >= len(training_set_db):
+        if update_count % accumulation_steps == 0 or (i + params.nbp_batch_size) >= len(training_set_db):
             scaler.step(optimizer)
             scaler.update()
             optimizer.zero_grad()
@@ -394,15 +394,15 @@ def train_experience_data(training_set_db, params, optimizer, nbp, device, curre
 
     return training_loss
 
-def evaluate_experience_data(all_experiences, params, navi, average_kernel, kernel_size, device):
+def evaluate_experience_data(all_experiences, params, nbp, average_kernel, kernel_size, device):
     validation_losses = []
-    total_batches = len(all_experiences) // params.navi_batch_size + (1 if len(all_experiences) % params.navi_batch_size > 0 else 0)
+    total_batches = len(all_experiences) // params.nbp_batch_size + (1 if len(all_experiences) % params.nbp_batch_size > 0 else 0)
     criterion_maps = nn.MSELoss() 
     criterion_layout = nn.BCELoss()  
     random.shuffle(all_experiences)
     for batch_index in range(total_batches):
-        start_index = batch_index * params.navi_batch_size
-        end_index = start_index + params.navi_batch_size
+        start_index = batch_index * params.nbp_batch_size
+        end_index = start_index + params.nbp_batch_size
         experiences = all_experiences[start_index:end_index]
 
         batch_start_grids, batch_previous_trajectories, batch_gt_2d_layouts, batch_target_locations, batch_angles, batch_gains = zip(*experiences)
@@ -413,7 +413,7 @@ def evaluate_experience_data(all_experiences, params, navi, average_kernel, kern
         batch_angles = torch.cat(batch_angles).to(device)
         batch_gains = torch.tensor(batch_gains, dtype=torch.float32, device=device)
 
-        output_maps = navi(torch.cat((batch_start_grids, batch_previous_trajectories), dim=1).to(device))
+        output_maps = nbp(torch.cat((batch_start_grids, batch_previous_trajectories), dim=1).to(device))
 
         # batch_loss = torch.mean(torch.stack(mse_losses))
         indices = torch.arange(len(batch_angles), device=device)
