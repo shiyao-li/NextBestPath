@@ -55,6 +55,7 @@ class Params():
     params = Params(json_path)
     print(params.learning_rate)
     params.learning_rate = 0.5
+    参数类，有可以读取json文件内容，并将其转换为字典形式，并且可以访问字典中的内容
     ```
     """
 

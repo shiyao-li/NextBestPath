@@ -25,14 +25,14 @@ def get_subfolder_names(folder_path):
     :param folder_path: The path to the directory from which subdirectories are listed.
     :return: List of subdirectory names.
     """
-    subfolders = []  # List to store subfolder names
-    # Use os.listdir to list all entries in the directory
+    subfolders = []  # 存放子文件夹名字的列表
+    # 遍历文件夹下的所有子文件夹以及文件
     for entry in os.listdir(folder_path):
-        # Construct the full path of the entry
+        # 构造子文件夹的完整路径
         full_path = os.path.join(folder_path, entry)
-        # Check if the entry is a directory and not a file
+        # 检查该路径是否为文件夹
         if os.path.isdir(full_path):
-            subfolders.append(entry)  # Add the directory name to the list
+            subfolders.append(entry)  # 将子文件夹名字添加到列表中
     
     return subfolders
 
@@ -41,42 +41,42 @@ def run_training_nbp(params=None):
     device = setup_device(params=params)
     dataset_path = params.data_path
 
-    print("data_path: ", dataset_path)
+    print("数据加载路径为: ", dataset_path)
     # Create dataloader from macarons
-    world_size, rank = None, None
-    scene_name = get_subfolder_names(dataset_path)
+    world_size, rank = None, None # 分布式训练时，world_size为多少个进程参数分布式训练，rank为当前进程的排名
+    scene_name = get_subfolder_names(dataset_path) # 获取数据集中的所有子文件夹名字
 
-    train_dataloader, _, _ = get_dataloader(train_scenes=scene_name,
-                                            val_scenes=params.val_scenes,
-                                            test_scenes=params.test_scenes,
-                                            batch_size=1,
-                                            ddp=params.ddp, jz=params.jz,
-                                            world_size=world_size, ddp_rank=rank,
-                                            data_path=dataset_path)
+    train_dataloader, _, _ = get_dataloader(train_scenes=scene_name, # 训练场景名
+                                            val_scenes=params.val_scenes, # 验证场景名
+                                            test_scenes=params.test_scenes, # 测试场景名
+                                            batch_size=1, # 批量大小
+                                            ddp=params.ddp, jz=params.jz, # 是否开启分布式训练
+                                            world_size=world_size, ddp_rank=rank, # 分布式训练时，world_size为多少个进程参数分布式训练，rank为当前进程的排名
+                                            data_path=dataset_path) # 数据加载路径
     
 
 
-    print("Current learning rate: ", params.nbp_lr)
+    print("当前学习率为: ", params.nbp_lr)
 
-    db_name = 'AiMDoom_insane.lmdb'
-    db_path = os.path.join( "./nbp/db", db_name)
-    db_env = lmdb.open(db_path, map_size=200 * 1024**3)
+    db_name = 'AiMDoom_insane.lmdb'# 存放经验的数据库名
+    db_path = os.path.join( "./nbp/db", db_name) # 存放经验的数据库路径
+    db_env = lmdb.open(db_path, map_size=200 * 1024**3) # 打开数据库
 
     
-    print("Model name: ", params.nbp_model_name)
-    print("Batch size: ", params.batch_size)
-    print("Name of optimizer: ", params.opt_name)
+    print("模型名称为: ", params.nbp_model_name)
+    print("批量大小为: ", params.batch_size)
+    print("优化器名称为: ", params.opt_name)
 
-    memory = setup_memory(params, scene_name, train_dataloader)
+    memory = setup_memory(params, scene_name, train_dataloader) # 设置记忆
 
-    results_to_save = {}
-    training_process_path = os.path.join(nbp_training_posses, nbp_training_name)
+    results_to_save = {} # 存放训练结果
+    training_process_path = os.path.join(nbp_training_posses, nbp_training_name) # ./training_log\AiMDoom_insane.json
     
-    pc2img_size = (256, 256)
-    prediction_range = (-40, 40) # 70, 70
-    value_map_size = (64, 64)
+    pc2img_size = (256, 256) # 点云转图像大小
+    prediction_range = (-40, 40) # 预测范围,单位是m
+    value_map_size = (64, 64) # 价值地图大小
 
-    nbp = NBP().to(device)
+    nbp = NBP().to(device) # 初始化NBP模型
     nbp, optimizer, best_loss, start_epoch = initialize_nbp(params, nbp,
                                             torch_seed=params.torch_seed,
                                             initialize=params.start_from_scratch,
@@ -88,23 +88,24 @@ def run_training_nbp(params=None):
     # nbp.eval()
     
     best_validation_loss = 1000
-    m.patch()
+    m.patch() # 让msgpack支持numpy,后面用msgpack读写LMDB里面的经验（含大量numpy），防止msgpack无法处理numpy类型
+    # 训练都是100个epoch，先收集数据，因为NBP的训练是基于经验回放的，所以需要大量的经验来训练模型
     for current_epoch in range(0, 100):
         
         t = current_epoch
         print("\n-------------------------------------------------------------------------------")
-        print(f"Epoch {t}")
+        print(f"当前训练第 {t} 个epoch")
         print("-------------------------------------------------------------------------------\n")
-        coverage_after_trajectory = []
+        coverage_after_trajectory = [] #每条轨迹在“规定步数”结束时，场景被覆盖的百分比。
         
 
-        folder_img_path = None
-        os.environ['CUDA_LAUNCH_BLOCKING'] = "1"
+        folder_img_path = None # 存放图片的路径
+        os.environ['CUDA_LAUNCH_BLOCKING'] = "1" # 让CUDA的错误信息更详细
 
 
-        torch.cuda.empty_cache()
-        nbp.eval()
-        print("Collection!")
+        torch.cuda.empty_cache() # 清空CUDA缓存
+        nbp.eval() # 设置模型为评估模式，不进行训练
+        print("开始收集数据!")
         trajectory_collection(params, current_epoch, train_dataloader, db_env, pc2img_size, value_map_size, prediction_range,
                 nbp, coverage_after_trajectory, memory, device, folder_img_path)
                 

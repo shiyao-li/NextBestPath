@@ -134,23 +134,28 @@ def setup_test_scene(params,
     :param device:
     :param is_master:
     :return:
+    场景对象	     职责描述	                数据来源	            特征维度 (feature_dim)	 特征含义
+    gt_scene	    性能评估的客观基准	        导入的真实 3D Mesh	      3	                      RGB 真实颜色
+    surface_scene	存储模型推断的              3D 表面	深度模型 + RGB 图像预测	1 (通常)	       可见性历史 (Visibility)
+    covered_scene	记录场景的探索/覆盖状态	    动态更新的观测记录	        1 (通常)	            探索覆盖状态 (Coverage)
+    proxy_scene	    渲染加速或路径规划的辅助点	 空间初始化逻辑生成	        1                       代理点索引 (Indices)
     """
 
     # Initialize gt_scene: we use this scene to store gt surface points to evaluate the performance of the model.
     # This scene is not used for supervision during training, since the model is self-supervised from RGB data
     # captured in real-time.
-    gt_scene = Scene(x_min=settings.scene.x_min-0.2,
+    gt_scene = Scene(x_min=settings.scene.x_min-0.2,#场景包含在3个轴的范围内，-0.2是为了避免边界效应
                      x_max=settings.scene.x_max+0.2,
-                     grid_l=settings.scene.grid_l,
-                     grid_w=settings.scene.grid_w,
-                     grid_h=settings.scene.grid_h,
-                     cell_capacity=params.surface_cell_capacity,
-                     cell_resolution=test_resolution * params.scene_scale_factor,
-                     n_proxy_points=params.n_proxy_points,
-                     device=device,
-                     view_state_n_elev=params.view_state_n_elev, view_state_n_azim=params.view_state_n_azim,
-                     feature_dim=3,
-                     mirrored_scene=mirrored_scene,
+                     grid_l=settings.scene.grid_l, # 网格长度
+                     grid_w=settings.scene.grid_w, # 网格宽度
+                     grid_h=settings.scene.grid_h, # 网格高度
+                     cell_capacity=params.surface_cell_capacity, # 每个单元格的容量
+                     cell_resolution=test_resolution * params.scene_scale_factor, # 每个单元格的分辨率
+                     n_proxy_points=params.n_proxy_points, # 代理点数
+                     device=device, # 设备
+                     view_state_n_elev=params.view_state_n_elev, view_state_n_azim=params.view_state_n_azim, # 视角数
+                     feature_dim=3, # 特征维度
+                     mirrored_scene=mirrored_scene, # 是否镜像
                      mirrored_axis=mirrored_axis)  # We use colors as features
 
     covered_scene = Scene(x_min=settings.scene.x_min-0.2,

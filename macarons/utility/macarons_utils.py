@@ -177,53 +177,54 @@ def line_segment_mesh_intersection(start_point, end_point, mesh):
 def setup_device(params, ddp_rank=None):
 
     if params.ddp:
-        print("Setup device", str(ddp_rank), "for DDP training...")
+        print("使用第", str(ddp_rank), "块GPU进行DPD训练...")
+        # 设置可用的GPU设备
         os.environ["CUDA_VISIBLE_DEVICES"] = params.CUDA_VISIBLE_DEVICES
 
-        os.environ['MASTER_ADDR'] = 'localhost'
-        os.environ['MASTER_PORT'] = '12355'
-        os.environ['WORLD_SIZE'] = str(params.WORLD_SIZE)
-        os.environ['RANK'] = str(ddp_rank)
+        os.environ['MASTER_ADDR'] = 'localhost' # 设置主节点地址
+        os.environ['MASTER_PORT'] = '12355' # 设置主节点端口
+        os.environ['WORLD_SIZE'] = str(params.WORLD_SIZE) # 设置多少个进程参数分布式训练
+        os.environ['RANK'] = str(ddp_rank) # 设置当前进程的排名
 
         dist.init_process_group("nccl", rank=ddp_rank, world_size=params.WORLD_SIZE)
 
-        device = torch.device("cuda:" + str(ddp_rank))
-        torch.cuda.set_device(device)
+        device = torch.device("cuda:" + str(ddp_rank)) # 设置当前进程的GPU设备
+        torch.cuda.set_device(device) 
 
-        torch.cuda.empty_cache()
-        print("Setup done!")
+        torch.cuda.empty_cache() # 清空GPU缓存
+        print("设置完成！")
 
         if ddp_rank == 0:
-            print(torch.cuda.memory_summary())
+            print(torch.cuda.memory_summary()) # 让主进程打印GPU内存使用情况
 
     elif params.jz:
-        print("Setup device", str(idr_torch_rank), " for Jean Zay training...")
-        dist.init_process_group(backend='nccl',
-                                init_method='env://',
-                                rank=idr_torch_rank,
-                                world_size=idr_torch_size)
+        print("使用第", str(idr_torch_rank), "块GPU进行Jean Zay训练...")
+        dist.init_process_group(backend='nccl', # 使用NCCL后端
+                                init_method='env://', # 使用环境变量初始化
+                                rank=idr_torch_rank, # 设置当前进程的排名
+                                world_size=idr_torch_size) # 设置多少个进程参数分布式训练
 
-        torch.cuda.set_device(idr_torch_local_rank)
+        torch.cuda.set_device(idr_torch_local_rank) # 设置当前进程的GPU设备
         device = torch.device("cuda")
 
         torch.cuda.empty_cache()
-        print("Setup done!")
+        print("Setup done!") # 设置完成
 
         if idr_torch_rank == 0:
-            print(torch.cuda.memory_summary())
+            print(torch.cuda.memory_summary()) # 让主进程打印GPU内存使用情况
 
     else:
         # Set our device:
-        if torch.cuda.is_available():
-            device = torch.device("cuda:" + str(params.numGPU))
+        if torch.cuda.is_available(): 
+            device = torch.device("当前为单主机单卡训练，使用第" + str(params.numGPU) + "块GPU进行训练...")
             torch.cuda.set_device(device)
         else:
             device = torch.device("cpu")
-        print(device)
+        print(device) # 打印设备信息
 
         # Empty cache
-        torch.cuda.empty_cache()
-        print(torch.cuda.memory_summary())
+        torch.cuda.empty_cache() # 清空GPU缓存
+        print(torch.cuda.memory_summary()) # 打印GPU内存使用情况
 
     return device
 
@@ -258,30 +259,31 @@ def get_dataloader(train_scenes, val_scenes, test_scenes,
                    data_path=None,
                    use_occupied_pose=False):
     # Database path
-    if data_path is None:
+    if data_path is None: # 如果数据加载路径为空，则使用默认路径
         if jz:
-            database_path = "../../datasets/scenes/rgb"
+            database_path = "../../datasets/scenes/rgb" # 使用Jean Zay默认路径
         else:
-            database_path = "../../../../datasets/scenes/rgb"
+            database_path = "../../../../datasets/scenes/rgb" # 使用默认路径
     else:
-        database_path = data_path
-    print("database_path----", database_path)
+        database_path = data_path # 使用自定义路径
+    print("数据加载路径为: ", database_path)
 
     # Dataset
-    train_dataset = SceneDataset(data_path=database_path, scene_names=train_scenes, use_occupied_pose=use_occupied_pose)
-    val_dataset = SceneDataset(data_path=database_path, scene_names=val_scenes, use_occupied_pose=use_occupied_pose)
-    test_dataset = SceneDataset(data_path=database_path, scene_names=test_scenes, use_occupied_pose=use_occupied_pose)
-    if ddp or jz:
+    train_dataset = SceneDataset(data_path=database_path, scene_names=train_scenes, use_occupied_pose=use_occupied_pose) # 训练集
+    # 验证集
+    val_dataset = SceneDataset(data_path=database_path, scene_names=val_scenes, use_occupied_pose=use_occupied_pose) # 验证集
+    test_dataset = SceneDataset(data_path=database_path, scene_names=test_scenes, use_occupied_pose=use_occupied_pose) # 测试集
+    if ddp or jz: # 是否开启分布式训练
         if jz:
             rank = idr_torch_rank
         else:
             rank = ddp_rank
-        train_sampler = DistributedSampler(train_dataset,
-                                           num_replicas=world_size,
-                                           rank=rank,
+        train_sampler = DistributedSampler(train_dataset, # 训练集
+                                           num_replicas=world_size, # 多少个进程参数分布式训练
+                                           rank=rank, # 当前进程的排名
                                            shuffle=True,
-                                           drop_last=True)
-        valid_sampler = DistributedSampler(val_dataset,
+                                           drop_last=True) # 是否丢弃最后一个批次
+        valid_sampler = DistributedSampler(val_dataset, # 验证集
                                            num_replicas=world_size,
                                            rank=rank,
                                            shuffle=False,
@@ -292,11 +294,11 @@ def get_dataloader(train_scenes, val_scenes, test_scenes,
                                           shuffle=False,
                                           drop_last=True)
 
-        train_dataloader = DataLoader(train_dataset,
-                                      batch_size=batch_size,
-                                      drop_last=True,
-                                      collate_fn=collate_batched_meshes,
-                                      sampler=train_sampler)
+        train_dataloader = DataLoader(train_dataset,# 训练集
+                                      batch_size=batch_size, # 批量大小
+                                      drop_last=True, # 是否丢弃最后一个批次
+                                      collate_fn=collate_batched_meshes, # 合并批次
+                                      sampler=train_sampler) # 采样器
         validation_dataloader = DataLoader(val_dataset,
                                            batch_size=batch_size,
                                            drop_last=True,
@@ -308,14 +310,14 @@ def get_dataloader(train_scenes, val_scenes, test_scenes,
                                      collate_fn=collate_batched_meshes,
                                      sampler=test_sampler)
     else:
-        train_dataloader = DataLoader(train_dataset,
-                                      batch_size=batch_size,
-                                      collate_fn=collate_batched_meshes,
-                                      shuffle=True)
-        validation_dataloader = DataLoader(val_dataset,
-                                           batch_size=batch_size,
-                                           collate_fn=collate_batched_meshes,
-                                           shuffle=False)
+        train_dataloader = DataLoader(train_dataset, # 训练集
+                                      batch_size=batch_size, # 批量大小
+                                      collate_fn=collate_batched_meshes, # 合并批次
+                                      shuffle=True) # 是否打乱
+        validation_dataloader = DataLoader(val_dataset, # 验证集
+                                           batch_size=batch_size, # 批量大小
+                                           collate_fn=collate_batched_meshes, # 合并批次
+                                           shuffle=False) # 是否打乱
         # train_dataloader = 0
         # validation_dataloader = 0
         test_dataloader = DataLoader(test_dataset,
@@ -582,28 +584,29 @@ def load_scene_with_texture(mesh_path, scene_scale_factor, device, mirror=False,
     :param mirrored_axis: (list) List of axis to mirror.
     :return: Meshes object with red texture.
     """
-    # Load the mesh
-    mesh = load_objs_as_meshes([mesh_path], device=device)  
+    # 加载模型
+    mesh = load_objs_as_meshes([mesh_path], device=device) 
 
-    # Scale the vertices
-    mesh.verts_list()[0] *= scene_scale_factor
+    # 缩放顶点
+    mesh.verts_list()[0] *= scene_scale_factor # 缩放顶点(10倍)
 
-    # Mirror the vertices if specified
+    # 如果需要镜像，则镜像顶点
     if mirror:
         if mirrored_axis is None:
-            raise ValueError("Please provide the list of mirrored axes.")
+            raise ValueError("请提供需要镜像的轴列表.")
         else:
             for axis in mirrored_axis:
                 mesh.verts_list()[0][..., axis] = -mesh.verts_list()[0][..., axis]
 
-    # Create a red texture
-    num_verts = mesh.verts_packed().shape[0]
-    texture_image = torch.ones((1, num_verts, 3), device=device) * torch.tensor([0.5, 0.5, 0.5], device=device)
+    # 创建一个纹理图像
+    num_verts = mesh.verts_packed().shape[0] # 获取当前mesh的顶点数
+    # 建一个形状为（1，num_verts, 3）的tensor，每个顶点都填充为[0.5, 0.5, 0.5](RGB)
+    texture_image = torch.ones((1, num_verts, 3), device=device) * torch.tensor([0.5, 0.5, 0.5], device=device) 
 
-    # Create TexturesVertex object
+    # 把“每一个顶点的RGB值”包装成一个纹理对象
     textures = TexturesVertex(verts_features=texture_image)
 
-    # Add the texture to the mesh
+    # 把这个问题挂载到mesh上
     mesh.textures = textures
 
     return mesh

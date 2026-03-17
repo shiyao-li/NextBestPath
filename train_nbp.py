@@ -24,9 +24,9 @@ if __name__ == "__main__":
     json_path = os.path.join(configs_dir, json_name)
     params = load_params(json_path)
     
-    if params.ddp:
+    if params.ddp: #是否开启分布式训练
         pass
-    elif params.jz:
+    elif params.jz: #是否开启Jean Zay集群训练
         pass
     else:
         run_training_nbp(params=params)

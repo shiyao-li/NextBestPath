@@ -10,8 +10,8 @@ class conv_block(nn.Module):
         super(conv_block, self).__init__()
         self.conv = nn.Sequential(
             nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
-            nn.BatchNorm2d(ch_out),
-            nn.ReLU(inplace=True),
+            nn.BatchNorm2d(ch_out), # 批量归一化，将特征图的值归一化到0-1之间, 加快训练速度，提高模型泛化能力
+            nn.ReLU(inplace=True), # inplace作用是直接在原内存上进行操作，避免复制数据，提高效率
             nn.Conv2d(ch_out, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
             nn.BatchNorm2d(ch_out),
             nn.ReLU(inplace=True)
@@ -24,8 +24,8 @@ class up_conv(nn.Module):
     def __init__(self, ch_in, ch_out):
         super(up_conv, self).__init__()
         self.up = nn.Sequential(
-            nn.Upsample(scale_factor=2),
-            nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, bias=True),
+            nn.Upsample(scale_factor=2), # 上采样，将图像大小放大2倍，新加入的单元格与缩放后最近单元格的值相同
+            nn.Conv2d(ch_in, ch_out, kernel_size=3, stride=1, padding=1, bias=True), # (h+2*p-k)/s + 1
             nn.BatchNorm2d(ch_out),
             nn.ReLU(inplace=True)
         )
@@ -38,7 +38,7 @@ class Attention_block(nn.Module):
         super(Attention_block, self).__init__()
         self.W_g = nn.Sequential(
             nn.Conv2d(F_g, F_int, kernel_size=1, stride=1, padding=0, bias=True),
-            nn.BatchNorm2d(F_int)
+            nn.BatchNorm2d(F_int) #F_int代表中间层的通道数
         )
 
         self.W_x = nn.Sequential(
@@ -49,26 +49,26 @@ class Attention_block(nn.Module):
         self.psi = nn.Sequential(
             nn.Conv2d(F_int, 1, kernel_size=1, stride=1, padding=0, bias=True),
             nn.BatchNorm2d(1),
-            nn.Sigmoid()
+            nn.Sigmoid() # 1 / (1 + e^(-x))
         )
 
         self.relu = nn.ReLU(inplace=True)
 
     def forward(self, g, x):
-        g1 = self.W_g(g)
-        x1 = self.W_x(x)
-        psi = self.relu(g1 + x1)
-        psi = self.psi(psi)
-        return x * psi
+        g1 = self.W_g(g) # 来自解码器当前层（高层语义、分辨率较低）。
+        x1 = self.W_x(x) # 来自编码器当前层（低层细节、分辨率较高）。
+        psi = self.relu(g1 + x1) # [[1.2, -0.3], [0.8, 2.1]]->[[1.2, 0], [0.8, 2.1]]
+        psi = self.psi(psi) #数值在0-1之间，表示解码器当前层对编码器当前层的关注程度
+        return x * psi # 将编码器当前层的特征图与解码器当前层的特征图相乘，得到新的特征图
 
 class NBP(nn.Module):
     def __init__(self, img_ch=5, output_ch1=8, output_ch2=1):
         super(NBP, self).__init__()
 
-        self.Maxpool = nn.MaxPool2d(kernel_size=2, stride=2)
+        self.Maxpool = nn.MaxPool2d(kernel_size=2, stride=2) #降采样，将图像大小减半，保留主要特征
 
         self.Conv1 = conv_block(ch_in=img_ch, ch_out=64)
-        self.Conv2 = conv_block(ch_in=64, ch_out=128)
+        self.Conv2 = conv_block(ch_in=64, ch_out=128) # 卷积层，将64通道的输入图像转换为128通道的特征图
         self.Conv3 = conv_block(ch_in=128, ch_out=256)
         self.Conv4 = conv_block(ch_in=256, ch_out=512)
         self.Conv5 = conv_block(ch_in=512, ch_out=1024)  # New encoder layer

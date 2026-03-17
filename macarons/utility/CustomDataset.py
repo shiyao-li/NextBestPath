@@ -313,12 +313,12 @@ class RGBDataset(Dataset):
 class SceneDataset(Dataset):
     def __init__(self, data_path, scene_names=None,
                  use_occupied_pose=False):
-        self.data_path = data_path
-        self.use_occupied_pose = use_occupied_pose
+        self.data_path = data_path # 数据加载路径
+        self.use_occupied_pose = use_occupied_pose # 是否使用占用位姿
 
-        # If no scene name is provided, we just take all scenes in the folder
+        # 如果场景名称为空，则获取数据集中的所有场景名
         if scene_names is None:
-            # scene_names = os.listdir(self.data_path)
+            # 获取数据集中的所有场景名
             scene_names = [scene_name for scene_name in os.listdir(self.data_path)
                            if os.path.isdir(os.path.join(self.data_path, scene_name))]
 
@@ -330,30 +330,30 @@ class SceneDataset(Dataset):
         #     for trajectory_nb in self.data['scenes'][scene_name]['trajectories']:
         #         total_length += len(self.data['scenes'][scene_name]['trajectories'][trajectory_nb]['frames'].keys())
         # return total_length
-
+        # 返回场景数量
         return len(self.scene_names)
 
     def __getitem__(self, idx):  # -> Dict:
+        # 获取场景名
+        scene_name = self.scene_names[idx] # 获得指定索引的场景名
+        scene_path = os.path.join(self.data_path, scene_name) # 获取场景路径
 
-        scene_name = self.scene_names[idx]
-        scene_path = os.path.join(self.data_path, scene_name)
-
-        # Mesh info
-        obj_name = scene_name + '.obj'
+        # 获取模型名
+        obj_name = scene_name + '.obj' # 默认模型名
         for file_name in os.listdir(scene_path):
             if file_name[-4:] == '.obj':
                 obj_name = file_name
                 break
 
         # Settings info
-        settings_file = os.path.join(scene_path, 'settings.json')
+        settings_file = os.path.join(scene_path, 'settings.json') # 获取场景设置文件
         with open(settings_file, "r") as read_content:
             settings = json.load(read_content)
 
         scene = {}
-        scene['scene_name'] = scene_name
-        scene['obj_name'] = obj_name
-        scene['settings'] = settings
+        scene['scene_name'] = scene_name # 场景名
+        scene['obj_name'] = obj_name # 模型名
+        scene['settings'] = settings # 场景设置
 
         # Info about occupied camera poses
         if self.use_occupied_pose:
