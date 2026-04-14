@@ -95,6 +95,10 @@ conda activate exploration
    python train_nbp.py
    ```
 
+## Visualization
+
+For visualization-related code, please refer to [`vis_blender/`](vis_blender/).
+
 ## Citation
 
 If you use this work in your research, please cite:
